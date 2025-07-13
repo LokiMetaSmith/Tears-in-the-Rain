@@ -73,54 +73,77 @@ else if (view_mode == "bowden_plate_part") bowden_coupler_plate();
 // =============================================================================
 
 module assembly_view(exploded=false) {
-    // Define a clear origin: z=0 is the mating plane between heater and water block.
-    
-    // --- Z-Positions for Each Component ---
-    z_heater_block = -(exploded ? explode_gap : 0);
-    z_water_block = 0;
-    z_bowden_plate = water_block_height + (exploded ? explode_gap : 0);
+    // Define Z-offsets for exploded view
+    gap1 = exploded ? explode_gap : 0;
+    gap2 = exploded ? explode_gap * 2 : 0;
 
-    // --- Place Manufactured Parts ---
-    translate([0,0,z_heater_block]) heater_block(preview=true);
-    translate([0,0,z_water_block]) {
-        water_block_bottom(preview=true);
-        water_block_top(preview=true);
+    // Group 1: Heater Block & its hardware
+    translate([0,0, -gap1]) {
+        translate([0,0,-heater_block_height/2]) {
+            heater_block(preview=true);
+            place_hardware("heater");
+            place_hardware("thermistor");
+        }
+        translate([0,0,-heater_block_height]) place_hardware("nozzle");
     }
-    translate([0,0,z_bowden_plate]) bowden_coupler_plate(preview=true);
-    
-    // --- Place Hardware at Correct Z-Positions ---
-    place_hardware("nozzle", z_heater_block);
-    place_hardware("heater", z_heater_block);
-    place_hardware("thermistor", z_heater_block);
-    place_hardware("heatbreak", z_water_block);
-    place_hardware("assembly_bolt", z_water_block);
-    place_hardware("coupler", z_bowden_plate);
+
+    // Group 2: Water Block & its hardware
+    translate([0,0,0]) {
+        translate([0,0,water_block_height/2]) {
+            water_block_bottom(preview=true);
+            water_block_top(preview=true);
+        }
+        place_hardware("heatbreak");
+        place_hardware("assembly_bolt");
+    }
+
+    // Group 3: Bowden Plate & its hardware
+    translate([0,0, gap2]) {
+        translate([0,0,water_block_height + coupler_plate_height/2]) {
+            bowden_coupler_plate(preview=true);
+        }
+        translate([0,0,water_block_height]) {
+            place_hardware("coupler");
+        }
+    }
 }
 
 // =============================================================================
 // HARDWARE MODELS (Defined relative to their insertion point)
 // =============================================================================
 module hardware(type) {
-    if (type=="nozzle") color("goldenrod") { cylinder(d=6, h=nozzle_thread_depth); translate([0,0,-5]) cylinder(d1=7, d2=2, h=5, $fn=6); }
+    // Nozzle: Origin is the top of the thread, pointing down in -Z direction.
+    if (type=="nozzle") color("goldenrod") {
+        cylinder(d=6, h=-nozzle_thread_depth);
+        translate([0,0,-nozzle_thread_depth]) cylinder(d1=7, d2=2, h=-5, $fn=6);
+    }
+    // Heater: Origin is its vertical center.
     if (type=="heater") color("red") cylinder(d=heater_cartridge_dia, h=heater_block_height, center=true);
+    // Thermistor: Origin is its center.
     if (type=="thermistor") color("green") rotate([0,90,0]) cylinder(d=thermistor_cartridge_dia, h=block_width, center=true);
+    // Heat Break: Origin is the "shoulder" that sits on the heater block.
     if (type=="heatbreak") color("silver") { cylinder(d=7, h=15); translate([0,0,-heatbreak_thread_depth]) cylinder(d=6, h=heatbreak_thread_depth); }
+    // Coupler: Origin is its base.
     if (type=="coupler") color("gold") { cylinder(d=6, h=4); translate([0,0,4]) cylinder(d=8, h=5, $fn=6); translate([0,0,9]) color("white") cylinder(d=10, h=4); }
-    if (type=="assembly_bolt") color("gray", 0.7) { cylinder(d=bolt_head_dia, h=bolt_head_depth); translate([0,0,-water_block_height]) cylinder(d=bolt_dia_clearance, h=water_block_height); }
+    // Assembly Bolt: Origin is the underside of the head.
+    if (type=="assembly_bolt") color("gray", 0.7) {
+        translate([0,0,water_block_height]) cylinder(d=bolt_head_dia, h=bolt_head_depth);
+        translate([0,0,water_block_height]) cylinder(d=bolt_dia_clearance, h=-water_block_height);
+    }
 }
 
 // =============================================================================
 // UNIVERSAL GRID & HARDWARE PLACEMENT
 // =============================================================================
 module grid_map(type, height_override=0) {
-    // This offset calculation centers the entire grid within the block.
-    offset_x = -(grid_x - 1) * nozzle_spacing / 2 - ((grid_x % 2 == 0) ? nozzle_spacing / 4 : 0);
+    offset_x = -(grid_x - 1) * nozzle_spacing / 2;
     offset_y = -((grid_y - 1) * stagger_y_spacing) / 2;
+    center_adj = (grid_x % 2 == 0) ? -nozzle_spacing/4 : 0;
     
     if (type=="nozzle_hole" || type=="heatbreak_clearance" || type=="coupler_hole") {
         for (y = [0 : grid_y - 1]) for (x = [0 : grid_x - 1]) {
             stagger = (y % 2 == 1) ? nozzle_spacing / 2 : 0;
-            pos = [offset_x + x * nozzle_spacing + stagger, offset_y + y * stagger_y_spacing, 0];
+            pos = [offset_x + x * nozzle_spacing + stagger + center_adj, offset_y + y * stagger_y_spacing, 0];
             translate(pos)
                 if (type=="nozzle_hole") nozzle_and_heatbreak_hole();
                 else if (type=="heatbreak_clearance") cylinder(h=water_block_height+2, d=heatbreak_clearance_dia, center=true);
@@ -128,12 +151,10 @@ module grid_map(type, height_override=0) {
         }
     }
     if (type=="heater_hole") {
-        for (y = [0 : grid_y - 2]) for (x = [0 : grid_x - 2]) {
-            heater_y_pos = offset_y + stagger_y_spacing/2 + y * stagger_y_spacing;
-            heater_stagger_offset = (y % 2 == 1) ? 0 : nozzle_spacing / 2;
-            heater_x_pos = offset_x + nozzle_spacing/2 + x * nozzle_spacing + heater_stagger_offset;
-            pos = [heater_x_pos, heater_y_pos, 0];
-            translate(pos) heater_hole();
+        for (y = [0 : grid_y - 2]) for (x = [0 : grid_x - 1]) {
+            y_pos = offset_y + y*stagger_y_spacing + stagger_y_spacing/2;
+            x_pos = offset_x + x*nozzle_spacing + nozzle_spacing/2 + center_adj;
+            translate([x_pos, y_pos, 0]) heater_hole();
         }
     }
     if (type=="assembly_bolt_top" || type=="assembly_bolt_bottom") {
@@ -156,47 +177,41 @@ module grid_map(type, height_override=0) {
 
 module bolt_hole(is_top, h_override) {
     h = h_override > 0 ? h_override : water_plate_height;
-    if (is_top) {
-        cylinder(h=h+2, d=bolt_dia_clearance, center=true);
-        if (h_override==0) translate([0,0,h-bolt_head_depth]) cylinder(h=bolt_head_depth, d=bolt_head_dia);
-    } else {
-        cylinder(h=h+2, d=bolt_dia_tap, center=true);
+    translate([0,0,h/2]) {
+        if (is_top) {
+            cylinder(h=h+2, d=bolt_dia_clearance, center=true);
+            if (h_override==0) translate([0,0,h/2-bolt_head_depth]) cylinder(h=bolt_head_depth+1, d=bolt_head_dia);
+        } else {
+            cylinder(h=h+2, d=bolt_dia_tap, center=true);
+        }
     }
 }
 
-module place_hardware(type, z_base=0) {
-    offset_x = -(grid_x - 1) * nozzle_spacing / 2 - ((grid_x % 2 == 0) ? nozzle_spacing / 4 : 0);
+module place_hardware(type) {
+    offset_x = -(grid_x - 1) * nozzle_spacing / 2;
     offset_y = -((grid_y - 1) * stagger_y_spacing) / 2;
+    center_adj = (grid_x % 2 == 0) ? -nozzle_spacing/4 : 0;
     
-    translate([0,0,z_base]) {
-        if (type=="thermistor") {
-            translate([0,0,-heater_block_height/2]) hardware("thermistor");
-        } else if (type=="nozzle" || type=="heatbreak" || type=="coupler") {
-            for (y = [0 : grid_y - 1]) for (x = [0 : grid_x - 1]) {
-                stagger = (y % 2 == 1) ? nozzle_spacing / 2 : 0;
-                pos = [offset_x + x * nozzle_spacing + stagger, offset_y + y * stagger_y_spacing, 0];
-                
-                z_offset = (type=="nozzle") ? -heater_block_height :
-                           (type=="heatbreak") ? 0 :
-                           (type=="coupler") ? 0 : 0;
-                
-                translate(pos + [0,0,z_offset]) hardware(type);
-            }
-        } else if (type=="heater") {
-            for (y = [0 : grid_y - 2]) for (x = [0 : grid_x - 2]) {
-                heater_y_pos = offset_y + stagger_y_spacing/2 + y * stagger_y_spacing;
-                heater_stagger_offset = (y % 2 == 1) ? 0 : nozzle_spacing / 2;
-                heater_x_pos = offset_x + nozzle_spacing/2 + x * nozzle_spacing + heater_stagger_offset;
-                pos = [heater_x_pos, heater_y_pos, 0];
-                translate(pos + [0,0,-heater_block_height/2]) hardware("heater");
-            }
-        } else if (type=="assembly_bolt") {
-            for (x_pos = [-block_width/2 + bolt_margin : bolt_margin*2 : block_width/2 - bolt_margin]) for (y_side = [-1, 1]) {
-                translate([x_pos, y_side*(block_depth/2-bolt_margin), water_block_height-bolt_head_depth]) hardware("assembly_bolt");
-            }
-            for (y_pos = [-block_depth/2 + bolt_margin*2 : bolt_margin*2 : block_depth/2 - bolt_margin*2]) for (x_side = [-1, 1]) {
-                translate([x_side*(block_width/2-bolt_margin),y_pos, water_block_height-bolt_head_depth]) hardware("assembly_bolt");
-            }
+    if (type=="thermistor") {
+        hardware("thermistor");
+    } else if (type=="nozzle" || type=="heatbreak" || type=="coupler") {
+        for (y = [0 : grid_y - 1]) for (x = [0 : grid_x - 1]) {
+            stagger = (y % 2 == 1) ? nozzle_spacing / 2 : 0;
+            pos = [offset_x + x * nozzle_spacing + stagger + center_adj, offset_y + y * stagger_y_spacing, 0];
+            translate(pos) hardware(type);
+        }
+    } else if (type=="heater") {
+        for (y = [0 : grid_y - 2]) for (x = [0 : grid_x - 1]) {
+            y_pos = offset_y + y*stagger_y_spacing + stagger_y_spacing/2;
+            x_pos = offset_x + x*nozzle_spacing + nozzle_spacing/2 + center_adj;
+            translate([x_pos, y_pos, 0]) hardware("heater");
+        }
+    } else if (type=="assembly_bolt") {
+        for (x_pos = [-block_width/2 + bolt_margin : bolt_margin*2 : block_width/2 - bolt_margin]) for (y_side = [-1, 1]) {
+            translate([x_pos, y_side*(block_depth/2-bolt_margin),0]) hardware("assembly_bolt");
+        }
+        for (y_pos = [-block_depth/2 + bolt_margin*2 : bolt_margin*2 : block_depth/2 - bolt_margin*2]) for (x_side = [-1, 1]) {
+            translate([x_side*(block_width/2-bolt_margin),y_pos,0]) hardware("assembly_bolt");
         }
     }
 }
