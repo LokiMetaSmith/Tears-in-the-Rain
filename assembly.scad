@@ -79,14 +79,15 @@ module assembly_view(exploded=false) {
     gap1 = exploded ? explode_gap : 0;
     gap2 = exploded ? explode_gap * 2 : 0;
     gap3 = exploded ? explode_gap * 3 : 0;
+    gap4 = exploded ? explode_gap * 4 : 0;
 
     // --- Group 1: Gantry Mounting Plate ---
-    translate([0,0, -heater_block_height - plate_thickness/2 - gap2]) {
+    translate([0,0, -heater_block_height - plate_thickness/2 - gap3]) {
         mounting_plate(preview=true);
     }
 
     // --- Group 2: Heater Block & its hardware ---
-    translate([0, 0, -gap1]) {
+    translate([0, 0, -gap2]) {
         translate([0, 0, -heater_block_height / 2]) {
             heater_block(preview=true);
             place_hardware("heater");
@@ -96,15 +97,19 @@ module assembly_view(exploded=false) {
     }
 
     // --- Group 3: Water Block & its hardware ---
+    // The two halves are now separated from each other in the exploded view
     translate([0, 0, 0]) {
         water_block_bottom(preview=true);
-        water_block_top(preview=true);
         place_hardware("heatbreak");
+    }
+    translate([0,0, gap1]) {
+        water_block_top(preview=true);
         place_hardware("assembly_bolt");
     }
 
+
     // --- Group 4: Bowden Couplers ---
-    translate([0, 0, gap3]) {
+    translate([0, 0, gap4]) {
         translate([0, 0, total_water_block_height]) place_hardware("coupler");
     }
 }
