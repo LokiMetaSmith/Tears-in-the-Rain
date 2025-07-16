@@ -1,6 +1,15 @@
 /*
 ================================================================================
- Full Multi-Nozzle Print Head Assembly (with Gantry Plate)
+ Full Multi-Nozzle Print Head Assembly (Side-Mount DFM)
+================================================================================
+
+ Author: Gemini
+ Date: July 14, 2024
+ Description:
+ This master assembly has been redesigned for a more compact and rigid
+ side-mount configuration. The gantry mounting plate has been eliminated,
+ and mounting wings have been integrated directly into the heater block.
+
 ================================================================================
 */
 
@@ -9,7 +18,7 @@
 // =============================================================================
 
 // -- View Control --
-view_mode = "exploded_view"; // ["full_assembly", "exploded_view", "heater_block_part", "water_block_top_part", "water_block_bottom_part", "mounting_plate_part"]
+view_mode = "full_assembly"; // ["full_assembly", "exploded_view", "heater_block_part", "water_block_top_part", "water_block_bottom_part"]
 
 // -- Grid & Block Dimensions --
 grid_x = 8; grid_y = 6;
@@ -22,17 +31,14 @@ water_block_top_height = 12.7;
 water_block_bottom_height = 6.35;
 total_water_block_height = water_block_top_height + water_block_bottom_height;
 
-// -- Gantry & Mounting Plate Configuration --
-plate_thickness = 6.35; // 0.250"
-plate_width = 150;
-plate_depth = 120;
-carriage_separation = 60; // Distance between the centers of the two MGN12 blocks
+// -- Gantry & Mounting Configuration (Integrated into Heater Block) --
+side_wing_width = 25; // How far the mounting wings extend from the side
+carriage_separation = 60; // Distance between the centers of the two MGN12 blocks on one side
 mgn12_spacing_x = 20; // Standard for MGN12H
 mgn12_spacing_y = 15; // Standard for MGN12H
 m3_clearance_dia = 3.2;
 m3_bolt_head_dia = 5.5;
 m3_bolt_head_depth = 3.5;
-
 
 // -- Hardware & Feature Dimensions --
 nozzle_tap_dia = 5; nozzle_thread_depth = 8;
@@ -40,7 +46,7 @@ heatbreak_tap_dia = 5; heatbreak_thread_depth = 6;
 filament_path_dia = 2.5; heater_cartridge_dia = 6;
 thermistor_cartridge_dia = 2; thermistor_grub_screw_tap_dia = 2.5;
 heatbreak_clearance_dia = 8; water_channel_dia = 6;
-port_tap_dia = 11.8; port_depth = 12;
+port_tap_dia = 11.8; port_depth = 10; // Reduced to fit within bottom plate
 coupler_tap_dia = 5; bolt_dia_clearance = 3.2;
 bolt_dia_tap = 2.5; bolt_head_dia = 5.5;
 bolt_head_depth = 3.5; bolt_margin = 5;
@@ -56,7 +62,6 @@ explode_gap = 15;
 
 include <heater.scad>;
 include <waterblock.scad>;
-include <mounting_plate.scad>; // New file included
 
 // =============================================================================
 // Main View Controller
@@ -69,7 +74,6 @@ else if (view_mode == "exploded_view") assembly_view(exploded=true);
 else if (view_mode == "heater_block_part") heater_block();
 else if (view_mode == "water_block_top_part") water_block_top();
 else if (view_mode == "water_block_bottom_part") water_block_bottom();
-else if (view_mode == "mounting_plate_part") mounting_plate(); // New view mode
 
 // =============================================================================
 // Assembly View Module
@@ -78,16 +82,9 @@ else if (view_mode == "mounting_plate_part") mounting_plate(); // New view mode
 module assembly_view(exploded=false) {
     gap1 = exploded ? explode_gap : 0;
     gap2 = exploded ? explode_gap * 2 : 0;
-    gap3 = exploded ? explode_gap * 3 : 0;
-    gap4 = exploded ? explode_gap * 4 : 0;
 
-    // --- Group 1: Gantry Mounting Plate ---
-    translate([0,0, -heater_block_height - plate_thickness/2 - gap3]) {
-        mounting_plate(preview=true);
-    }
-
-    // --- Group 2: Heater Block & its hardware ---
-    translate([0, 0, -gap2]) {
+    // Group 1: Heater Block
+    translate([0, 0, -gap1]) {
         translate([0, 0, -heater_block_height / 2]) {
             heater_block(preview=true);
             place_hardware("heater");
@@ -96,26 +93,18 @@ module assembly_view(exploded=false) {
         translate([0, 0, -heater_block_height]) place_hardware("nozzle");
     }
 
-    // --- Group 3: Water Block & its hardware ---
-    // The two halves are now separated from each other in the exploded view
+    // Group 2: Water Block
     translate([0, 0, 0]) {
         water_block_bottom(preview=true);
+        translate([0,0,gap1]) water_block_top(preview=true);
         place_hardware("heatbreak");
-    }
-    translate([0,0, gap1]) {
-        water_block_top(preview=true);
-        place_hardware("assembly_bolt");
-    }
-
-
-    // --- Group 4: Bowden Couplers ---
-    translate([0, 0, gap4]) {
-        translate([0, 0, total_water_block_height]) place_hardware("coupler");
+        translate([0,0,gap1]) place_hardware("assembly_bolt");
+        translate([0,0,gap1]) place_hardware("coupler");
     }
 }
 
 // =============================================================================
-// HARDWARE MODELS & PLACEMENT LOGIC (Restored)
+// HARDWARE MODELS & PLACEMENT LOGIC
 // =============================================================================
 
 module hardware(type) {
@@ -141,8 +130,8 @@ module grid_map(type) {
             pos = [offset_x + x * nozzle_spacing + stagger + center_adj, offset_y + y * stagger_y_spacing, 0];
             translate(pos) {
                 if (type=="nozzle_hole") nozzle_and_heatbreak_hole();
-                else if (type=="heatbreak_clearance") cylinder(h=total_water_block_height+2, d=heatbreak_clearance_dia, center=true);
-                else if (type=="coupler_hole") cylinder(h=water_block_top_height+2, d=coupler_tap_dia, center=true);
+                else if (type=="heatbreak_clearance") cylinder(h=total_water_block_height+0.2, d=heatbreak_clearance_dia, center=true);
+                else if (type=="coupler_hole") cylinder(h=water_block_top_height+0.2, d=coupler_tap_dia, center=true);
             }
         }
     }
@@ -164,20 +153,18 @@ module grid_map(type) {
         }
     }
     if (type=="mounting_hole") {
-        for (y_pos = [-block_depth/2 + bolt_margin*2 : bolt_margin*2 : block_depth/2 - bolt_margin*2]) {
-            translate([0, y_pos, 0]) cylinder(d=m3_clearance_dia, h=heater_block_height+2, center=true);
-        }
+        mgn12_side_mounts();
     }
 }
 
 module bolt_hole(is_top) {
     if (is_top) {
         translate([0,0,water_block_bottom_height]) {
-             cylinder(h=water_block_top_height+2, d=bolt_dia_clearance, center=true);
-             translate([0,0,water_block_top_height/2 - bolt_head_depth]) cylinder(h=bolt_head_depth+1, d=bolt_head_dia);
+             cylinder(h=water_block_top_height+0.2, d=bolt_dia_clearance, center=true);
+             translate([0,0,water_block_top_height - bolt_head_depth]) cylinder(h=bolt_head_depth+0.1, d=bolt_head_dia);
         }
     } else {
-        translate([0,0,water_block_bottom_height/2]) cylinder(h=water_block_bottom_height+2, d=bolt_dia_tap, center=true);
+        translate([0,0,water_block_bottom_height/2]) cylinder(h=water_block_bottom_height+0.2, d=bolt_dia_tap, center=true);
     }
 }
 

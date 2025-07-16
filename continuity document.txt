@@ -1,0 +1,58 @@
+Project Handoff Briefing: Parametric Multi-Nozzle 3D Printer Head
+Project Goal: To design a fully parametric, large-scale, multi-nozzle 3D printer head for rapid, parallel 3D printing. The design must be optimized for manufacturability using common CNC services like SendCutSend and use standard, off-the-shelf 3D printer components.
+
+I. Current Status & Core Concept
+We have successfully designed a complete, modular print head assembly in OpenSCAD. The core of the design is a stack of custom-machined aluminum plates that create a "hot side" and a "cold side" to manage heat flow effectively.
+
+The assembly consists of three main custom components:
+
+Heater Block: A thick aluminum block that holds the nozzles and heater cartridges. It features integrated "wings" on the sides for mounting the entire assembly to a gantry.
+
+Water Block (Bottom): A thin aluminum plate that forms the bottom half of the water cooling circuit.
+
+Water Block (Top): A thick aluminum plate that forms the top half of the water cooling circuit and also has tapped holes on its top surface for mounting the Bowden filament couplers.
+
+II. Key Design Decisions & Features
+Parametric Design: All components are controlled by global variables in the main assembly.scad file. Key parameters like grid_x, grid_y, and nozzle_spacing will automatically update the entire design.
+
+Staggered Grid: Nozzles are arranged in a staggered (hexagonal) pattern to maximize packing density.
+
+Modular File Structure: The project is organized into multiple .scad files. assembly.scad is the master file that includes the component files (heater.scad, waterblock.scad). The component files are libraries and will not render correctly on their own.
+
+Design for Manufacturing (DFM):
+
+Material Thickness: Component heights are based on standard aluminum plate thicknesses available from services like SendCutSend (e.g., 0.500", 0.250").
+
+Two-Piece Water Block: The water block is a two-piece design to allow for the milling of the internal serpentine water channel. It is sealed with a gasket and clamped together with bolts.
+
+Side-Mounting: The entire assembly is designed to be mounted to the gantry via rigid wings integrated into the heater block, providing maximum stability.
+
+Standard Hardware: The design is based on common, off-the-shelf parts:
+
+Nozzles: Standard M6 threaded nozzles (E3D V6 style).
+
+Heat Breaks: Standard M6 threaded heat breaks.
+
+Heaters: Standard 6mm diameter cylindrical heater cartridges.
+
+Filament Feeding: A Bowden system using PC4-M6 pneumatic couplers.
+
+Gantry: The mounting wings are designed for MGN12 linear rail carriages.
+
+III. File Structure & Roles
+assembly.scad: The master file. Contains all global configuration variables, the assembly_view module, and the place_hardware logic. It includes the other files. This is the primary file to interact with.
+
+heater.scad: Defines the heater_block module. Includes logic for the nozzle holes, heater holes, and the integrated side mounting wings for the MGN12 rails.
+
+waterblock.scad: Defines the water_block_top and water_block_bottom modules. Contains the logic for the serpentine water channel, the G1/4" water fitting ports, and the M6 tapped holes for the Bowden couplers on the top plate.
+
+IV. How to Continue the Project
+Review the Master File: Start by reading through assembly.scad to understand the global parameters and how the assembly is constructed.
+
+Use View Modes: The view_mode variable in assembly.scad is the primary tool for inspection. Use "full_assembly" and "exploded_view" to understand how parts fit together. Use the _part views (e.g., "heater_block_part") to isolate and export individual components for manufacturing.
+
+Respect the Modular Structure: When making changes, modify the appropriate component file. For example, to change the water channel path, edit waterblock.scad. To change the gantry mounting, edit heater.scad.
+
+Check for Warnings: Always check the OpenSCAD console for warnings after making a change. The most common errors in this project have been "unknown module" (due to incorrect definition order) and "unknown variable" (due to scope issues between files).
+
+The immediate next steps for this project would likely involve generating final STEP or DXF files for manufacturing, creating a bill of materials (BOM), or designing the external Bowden extruder array.
