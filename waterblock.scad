@@ -1,4 +1,4 @@
-// waterblock.scad - Defines the two-piece water block component
+// waterblock.scad - Defines the two-piece water block with top-facing ports.
 // This file is intended to be included by assembly.scad and will not render correctly on its own.
 
 // Defines the serpentine water channel path as a solid for subtraction
@@ -34,18 +34,27 @@ module water_channels(epsilon=0.1) {
     }
 }
 
-// Defines the G1/4" threaded inlet/outlet ports
+// Defines the G1/4" threaded inlet/outlet ports on the top face
 module water_ports() {
-    inlet_pos = [-block_width / 2, -block_depth / 2 + wall_margin, 0];
-    translate(inlet_pos) rotate([0, 90, 0]) cylinder(h = port_depth + 0.2, d = port_tap_dia);
+    inlet_pos = [-block_width / 2 + wall_margin, -block_depth / 2 + wall_margin, 0];
+    translate(inlet_pos) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
 
-    outlet_y = block_depth / 2 - wall_margin;
-    outlet_x_side = (grid_y % 2 == 1) ? 1 : -1; 
-    outlet_pos = [outlet_x_side * (block_width / 2), outlet_y, 0];
-    translate(outlet_pos) rotate([0, -90 * outlet_x_side, 0]) cylinder(h = port_depth + 0.2, d = port_tap_dia);
+    outlet_pos = [block_width / 2 - wall_margin, block_depth / 2 - wall_margin, 0];
+    translate(outlet_pos) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
 }
 
-// Merged Top Plate (Water Block Top + Bowden Plate)
+// Creates clearance holes for the main assembly bolts to pass through
+module main_assembly_bolt_clearance() {
+    for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
+        translate([x_pos, -block_depth/2 + bracket_flange_width/2, 0])
+        cylinder(d=m3_clearance_dia, h=total_water_block_height+0.2, center=true);
+        
+        translate([x_pos, block_depth/2 - bracket_flange_width/2, 0])
+        cylinder(d=m3_clearance_dia, h=total_water_block_height+0.2, center=true);
+    }
+}
+
+// Top Plate
 module water_block_top(preview=false) {
     difference() {
         color("darkcyan", preview ? 0.8 : 1)
@@ -54,8 +63,9 @@ module water_block_top(preview=false) {
         
         translate([0,0,water_block_bottom_height]) water_channels();
         grid_map("heatbreak_clearance");
-        translate([0,0,water_block_bottom_height]) grid_map("coupler_hole");
-        grid_map("assembly_bolt_top");
+        grid_map("coupler_hole");
+        main_assembly_bolt_clearance();
+        translate([0,0,water_block_bottom_height + water_block_top_height/2]) water_ports();
     }
 }
 
@@ -68,7 +78,6 @@ module water_block_bottom(preview=false) {
         
         translate([0,0,water_block_bottom_height]) water_channels();
         grid_map("heatbreak_clearance");
-        grid_map("assembly_bolt_bottom");
-        translate([0,0,water_block_bottom_height/2]) water_ports();
+        main_assembly_bolt_clearance();
     }
 }

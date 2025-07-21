@@ -19,17 +19,14 @@ module thermistor_hole_assembly() {
     translate([0, -block_depth/2, 0]) rotate([90,0,0]) cylinder(h=wall_margin+0.1, d=thermistor_grub_screw_tap_dia);
 }
 
-// Creates tapped M3 holes on the BOTTOM face for the L-brackets
-module bottom_tapped_holes() {
-    // Holes for the front bracket
+// Creates clearance holes for the main assembly bolts to pass through
+module main_assembly_bolt_clearance() {
     for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
-        translate([x_pos, -block_depth/2 + bracket_flange_width/2, -heater_block_height/2])
-        cylinder(d=bolt_dia_tap, h=wall_margin+0.2);
-    }
-    // Holes for the back bracket
-    for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
-        translate([x_pos, block_depth/2 - bracket_flange_width/2, -heater_block_height/2])
-        cylinder(d=bolt_dia_tap, h=wall_margin+0.2);
+        translate([x_pos, -block_depth/2 + bracket_flange_width/2, 0])
+        cylinder(d=m3_clearance_dia, h=heater_block_height+0.2, center=true);
+        
+        translate([x_pos, block_depth/2 - bracket_flange_width/2, 0])
+        cylinder(d=m3_clearance_dia, h=heater_block_height+0.2, center=true);
     }
 }
 
@@ -43,7 +40,7 @@ module heater_block(preview=false) {
         // Subtract all the necessary holes
         grid_map("nozzle_hole");
         grid_map("heater_hole");
-        grid_map("mounting_hole"); // This now calls the bottom tapped holes
+        main_assembly_bolt_clearance();
         thermistor_hole_assembly();
     }
 }
