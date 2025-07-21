@@ -1,4 +1,4 @@
-// heater.scad - Defines the heater block for side-mounting with L-brackets.
+// heater.scad - Defines the heater block for bottom-mounting with L-brackets.
 // This file is intended to be included by assembly.scad and will not render correctly on its own.
 
 // Defines a single hole for a nozzle (bottom) and heat break (top)
@@ -19,21 +19,17 @@ module thermistor_hole_assembly() {
     translate([0, -block_depth/2, 0]) rotate([90,0,0]) cylinder(h=wall_margin+0.1, d=thermistor_grub_screw_tap_dia);
 }
 
-// Creates tapped M3 holes on the side faces for the L-brackets
-module side_tapped_holes() {
-    // Left side holes
-    for (z_pos = [-heater_block_height/2 + bolt_margin*2, 0, heater_block_height/2 - bolt_margin*2]) {
-        translate([-block_width/2, 0, z_pos]) {
-             rotate([0,-90,0])
-             cylinder(d=bolt_dia_tap, h=wall_margin+0.2, center=false);
-        }
+// Creates tapped M3 holes on the BOTTOM face for the L-brackets
+module bottom_tapped_holes() {
+    // Holes for the front bracket
+    for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
+        translate([x_pos, -block_depth/2 + bracket_flange_width/2, -heater_block_height/2])
+        cylinder(d=bolt_dia_tap, h=wall_margin+0.2);
     }
-    // Right side holes
-    for (z_pos = [-heater_block_height/2 + bolt_margin*2, 0, heater_block_height/2 - bolt_margin*2]) {
-        translate([block_width/2, 0, z_pos]) {
-             rotate([0,90,0])
-             cylinder(d=bolt_dia_tap, h=wall_margin+0.2, center=false);
-        }
+    // Holes for the back bracket
+    for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
+        translate([x_pos, block_depth/2 - bracket_flange_width/2, -heater_block_height/2])
+        cylinder(d=bolt_dia_tap, h=wall_margin+0.2);
     }
 }
 
@@ -47,7 +43,7 @@ module heater_block(preview=false) {
         // Subtract all the necessary holes
         grid_map("nozzle_hole");
         grid_map("heater_hole");
-        grid_map("mounting_hole");
+        grid_map("mounting_hole"); // This now calls the bottom tapped holes
         thermistor_hole_assembly();
     }
 }
