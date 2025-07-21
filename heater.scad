@@ -1,28 +1,19 @@
 // heater.scad - Defines the heater block with integrated side mounting wings.
-
+// Main module to generate the heater block part.
 module heater_block(preview=false) {
     difference() {
-        // Main Body with integrated wings
-        union() {
-            color("lightgray", preview ? 0.7 : 1) {
-                // Central block
-                cube([block_width, block_depth, heater_block_height], center=true);
-                // Left Wing
-                translate([-block_width/2 - side_wing_width/2, 0, 0])
-                cube([side_wing_width, block_depth, heater_block_height], center=true);
-                // Right Wing
-                translate([block_width/2 + side_wing_width/2, 0, 0])
-                cube([side_wing_width, block_depth, heater_block_height], center=true);
-            }
-        }
+        // Main Body (no wings)
+        color("lightgray", preview ? 0.7 : 1)
+        cube([block_width, block_depth, heater_block_height], center=true);
         
         // Subtract all the necessary holes
         grid_map("nozzle_hole");
         grid_map("heater_hole");
-        grid_map("mounting_hole"); // This now calls the side mount holes
+        grid_map("mounting_hole"); // This now calls the side tapped holes
         thermistor_hole_assembly();
     }
 }
+
 
 // Creates the mounting holes for two MGN12 carriages on each side wing
 module mgn12_side_mounts() {
@@ -58,6 +49,34 @@ module nozzle_and_heatbreak_hole() {
     translate([0, 0, -heater_block_height/2]) cylinder(h = nozzle_thread_depth + 0.1, d = nozzle_tap_dia);
     translate([0, 0, heater_block_height/2]) rotate([180, 0, 0]) cylinder(h = heatbreak_thread_depth + 0.1, d = heatbreak_tap_dia);
     cylinder(h = heater_block_height + 0.2, d = filament_path_dia, center = true);
+}
+// heater.scad - Defines the heater block, now with side holes for L-brackets.
+
+module top_mounting_holes() {
+    for (x_pos = [-block_width/2 + bolt_margin : block_width/2 - bolt_margin*2 : block_width/2 - bolt_margin]) {
+        for (y_pos = [-block_depth/2 + bolt_margin, block_depth/2 - bolt_margin]) {
+            translate([x_pos, y_pos, 0])
+            cylinder(d=bolt_dia_tap, h=heater_block_height+0.2, center=true);
+        }
+    }
+}
+
+// Creates tapped holes on the side faces for the L-brackets
+module side_tapped_holes() {
+    // Left side holes
+    for (y_pos = [-bracket_height/2 + bolt_margin : bracket_height/2 - bolt_margin]) {
+        translate([-block_width/2, y_pos, 0]) {
+             rotate([0,-90,0])
+             cylinder(d=bolt_dia_tap, h=wall_margin+0.2, center=true);
+        }
+    }
+    // Right side holes
+    for (y_pos = [-bracket_height/2 + bolt_margin : bracket_height/2 - bolt_margin]) {
+        translate([block_width/2, y_pos, 0]) {
+             rotate([0,90,0])
+             cylinder(d=bolt_dia_tap, h=wall_margin+0.2, center=true);
+        }
+    }
 }
 
 // Defines a single hole for a heater cartridge
