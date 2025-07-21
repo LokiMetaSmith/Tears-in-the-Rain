@@ -78,11 +78,13 @@ module assembly_view(exploded=false) {
 
         // Mounting Brackets
         // Front Bracket
-        translate([0, -block_depth/2, 0]) {
+        rotate([0,0,90])
+        translate([ -block_depth/2, 0,0]) {
             mounting_bracket(preview=true);
         }
         // Back Bracket
-        translate([0, block_depth/2, 0]) {
+        rotate([0,0,-90])
+        translate([-block_depth/2, 0,0]) {
             mirror([0,1,0]) mounting_bracket(preview=true);
         }
     }
