@@ -2,6 +2,8 @@
 // This file is intended to be included by assembly.scad and will not render correctly on its own.
 
 // Defines a single hole for a nozzle (bottom) and heat break (top)
+
+include <helpers.scad>;
 module nozzle_and_heatbreak_hole() {
     translate([0, 0, -heater_block_height/2]) cylinder(h = nozzle_thread_depth + 0.1, d = nozzle_tap_dia);
     translate([0, 0, heater_block_height/2]) rotate([180, 0, 0]) cylinder(h = heatbreak_thread_depth + 0.1, d = heatbreak_tap_dia);

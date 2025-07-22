@@ -1,6 +1,6 @@
 // waterblock.scad - Defines the two-piece water block with top-facing ports.
 // This file is intended to be included by assembly.scad and will not render correctly on its own.
-
+include <helpers.scad>;
 // Defines the serpentine water channel path as a solid for subtraction
 module water_channels(epsilon=0.1) {
     channel_y_offset = -(grid_y - 1) * stagger_y_spacing / 2;
@@ -39,7 +39,7 @@ module water_ports() {
     inlet_pos = [-block_width / 2 + wall_margin, -block_depth / 2 + wall_margin, 0];
     translate(inlet_pos) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
 
-    outlet_pos = [block_width / 2 - wall_margin, block_depth / 2 - wall_margin, 0];
+    outlet_pos = [-block_width / 2 + wall_margin, block_depth / 2 + wall_margin, 0];
     translate(outlet_pos) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
 }
 
