@@ -43,14 +43,30 @@ module water_ports() {
     translate(outlet_pos) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
 }
 
-// Creates clearance holes for the main assembly bolts to pass through
+// Creates simple clearance holes for the main assembly bolts to pass through the bottom plate
 module main_assembly_bolt_clearance() {
     for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
         translate([x_pos, -block_depth/2 + bracket_flange_width/2, 0])
-        cylinder(d=m3_clearance_dia, h=total_water_block_height+0.2, center=true);
+        cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
         
         translate([x_pos, block_depth/2 - bracket_flange_width/2, 0])
-        cylinder(d=m3_clearance_dia, h=total_water_block_height+0.2, center=true);
+        cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
+    }
+}
+
+// Creates counterbored clearance holes for the main assembly bolts in the top plate
+module main_assembly_bolt_counterbored_clearance() {
+    for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
+        // Holes on the negative Y side
+        translate([x_pos, -block_depth/2 + bracket_flange_width/2, 0]) {
+             cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true); // Clearance hole
+             translate([0,0,total_water_block_height/2]) rotate([180,0,0]) cylinder(d=bolt_head_dia, h=bolt_head_depth); // Counterbore
+        }
+        // Holes on the positive Y side
+        translate([x_pos, block_depth/2 - bracket_flange_width/2, 0]) {
+             cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true); // Clearance hole
+             translate([0,0,total_water_block_height/2]) rotate([180,0,0]) cylinder(d=bolt_head_dia, h=bolt_head_depth); // Counterbore
+        }
     }
 }
 
@@ -63,10 +79,15 @@ module water_block_top(preview=false) {
         
         translate([0,0,water_block_bottom_height]) water_channels();
         union(){
-            translate([0,0, water_block_top_height]) grid_map("heatbreak_clearance");
-           //# translate([0,0, water_block_top_height/2]) grid_map("coupler_hole");
-            main_assembly_bolt_clearance();
-            translate([0,0,water_block_bottom_height + water_block_top_height/2]) water_ports();
+            // Holes that go through the entire water block assembly
+            grid_map("heatbreak_clearance");
+            main_assembly_bolt_counterbored_clearance(); // Use counterbored holes for the top plate
+
+            // Features specific to the top plate, positioned relative to its center
+            translate([0,0, water_block_bottom_height + water_block_top_height/2]) {
+                grid_map("coupler_hole"); // For bowden couplers
+                water_ports(); // For G1/4 fittings
+            }
         }
     }
 }

@@ -18,18 +18,19 @@
 // =============================================================================
 
 // -- View Control --
-view_mode = "full_assembly"; // ["full_assembly", "exploded_view", "heater_block_part", "water_block_top_part", "water_block_bottom_part", "mounting_bracket_part", "mounting_plate_part"]
+view_mode = "full_assembly"; // ["full_assembly", "exploded_view", "heater_block_part", "water_block_top_part", "water_block_bottom_part", "c_bracket_part", "mounting_plate_part"]
 
 // -- Gantry & Mounting Configuration --
-mount_style = "top_plate"; // ["side_brackets", "top_plate"]
+mount_style = "side_brackets"; // ["side_brackets", "top_plate"]
 mounting_plate_thickness = 3.18;
 bracket_thickness = 3.18; // .125" 5052 Aluminum
 bracket_height = 40;
-bracket_flange_width = 10;
+bracket_flange_width = 15; // Increased flange width for C-bracket
 carriage_separation = 60;
-mgn12_spacing_x = 20;
-mgn12_spacing_y = 15;
-m3_clearance_dia = 3.2;
+// Pillow block dimensions (e.g., for SBR12UU)
+pillow_block_hole_spacing_x = 36;
+pillow_block_hole_spacing_y = 26;
+pillow_block_bolt_dia = 5.2; // Clearance for M5 bolt
 
 // -- Grid & Block Dimensions --
 grid_x = 8;
@@ -69,10 +70,10 @@ bolt_head_depth = 3.5;
 // =============================================================================
 
 stagger_y_spacing = nozzle_spacing * sqrt(3) / 2;
-block_width = (grid_x - 1) * nozzle_spacing + wall_margin * 2 + bracket_flange_width;
-block_depth = (grid_y - 1) * stagger_y_spacing + wall_margin * 2 + bracket_flange_width;
+block_width = (grid_x - 1) * nozzle_spacing + wall_margin * 2;
+block_depth = (grid_y - 1) * stagger_y_spacing + wall_margin * 2;
 explode_gap = 10;
-bracket_width = block_width;
+bracket_width = block_width; // Bracket length is the width of the main block
 
 // =============================================================================
 // File Includes
@@ -80,7 +81,7 @@ bracket_width = block_width;
 include <helpers.scad>;
 include <heater.scad>;
 include <waterblock.scad>;
-include <mounting_bracket.scad>;
+include <c_bracket.scad>;
 include <mounting_plate.scad>;
 
 // =============================================================================
@@ -92,47 +93,50 @@ $fn=64;
 module assembly_view(exploded=false) {
     gap = exploded ? explode_gap : 0;
 
-    // --- Group 1: Heater Block & Side Brackets ---
-    translate([0,0, -heater_block_height/2 - gap]) {
-        heater_block(preview=true);
-        translate([0,0,-gap*3/2])
-        place_hardware("heater",preview=true);
-        translate([0,0,-gap*2])
-        place_hardware("thermistor",preview=true);
-        translate([0,0,-gap*3])
-        place_hardware("nozzle",preview=true);
-
-        // Mounting Brackets (Conditional)
-        if (mount_style == "side_brackets") {
-            translate([0, -block_depth/2-bracket_thickness,-(heater_block_height/2+bracket_thickness)]) {
-                mounting_bracket(preview=true);
-            }
-            translate([0, block_depth/2+bracket_thickness, -(heater_block_height/2+bracket_thickness)]) {
-                mirror([0,1,0]) mounting_bracket(preview=true);
-            }
+    // --- Main Assembly Stack ---
+    // This is a group so we can move the brackets with it easily.
+    group() {
+        // --- Group 1: Heater Block ---
+        translate([0,0, -heater_block_height/2 - gap]) {
+            heater_block(preview=true);
+            translate([0,0,-gap*3/2])
+            place_hardware("heater",preview=true);
+            translate([0,0,-gap*2])
+            place_hardware("thermistor",preview=true);
+            translate([0,0,-gap*3])
+            place_hardware("nozzle",preview=true);
         }
-    }
 
-    // --- Group 2: Water Block ---
-    translate([0,0,0]) {
-        translate([0,0,-gap/2]) water_block_bottom(preview=true);
-        translate([0,0,gap/2]) water_block_top(preview=true);
-        place_hardware("heatbreak",preview=true);
-    }
-    
-    // --- Group 3: Couplers & Top Mount ---
-    translate([0,0,gap*2]) {
-        place_hardware("coupler",preview=true);
+        // --- Group 2: Water Block ---
+        translate([0,0,0]) {
+            translate([0,0,-gap/2]) water_block_bottom(preview=true);
+            translate([0,0,gap/2]) water_block_top(preview=true);
+            place_hardware("heatbreak",preview=true);
+        }
         
-        // Bolts are only for side brackets in this design
-        if (mount_style == "side_brackets") {
+        // --- Group 3: Couplers & Bolts ---
+        translate([0,0,gap*2]) {
+            place_hardware("coupler",preview=true);
             place_hardware("main_assembly_bolt",preview=true);
         }
-        // Add top plate if selected. Positioned above the water block.
-        if (mount_style == "top_plate") {
-            translate([0,0, total_water_block_height + mounting_plate_thickness/2])
-            mounting_plate(preview=true);
+    }
+
+    // --- Mounting Brackets (Conditional) ---
+    if (mount_style == "side_brackets") {
+        // Place left bracket
+        translate([0, -block_depth/2 - bracket_thickness, -heater_block_height/2]) {
+            c_bracket(preview=true);
         }
+        // Place right bracket
+        translate([0, block_depth/2, -heater_block_height/2]) {
+            mirror([0,1,0]) c_bracket(preview=true);
+        }
+    }
+
+    // --- Top Mounting Plate (Conditional) ---
+    if (mount_style == "top_plate") {
+        translate([0,0, total_water_block_height/2 + mounting_plate_thickness/2 + gap*3])
+        mounting_plate(preview=true);
     }
 }
 
@@ -140,7 +144,7 @@ module assembly_view(exploded=false) {
 if (view_mode == "heater_block_part") heater_block();
 else if (view_mode == "water_block_top_part") water_block_top();
 else if (view_mode == "water_block_bottom_part") water_block_bottom();
-else if (view_mode == "mounting_bracket_part") mounting_bracket();
+else if (view_mode == "c_bracket_part") c_bracket();
 else if (view_mode == "mounting_plate_part") mounting_plate();
 else if (view_mode == "full_assembly") assembly_view(exploded = false);
 else assembly_view(exploded = true);

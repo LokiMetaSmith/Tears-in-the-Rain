@@ -17,9 +17,13 @@ module hardware(type,preview=false) {
         translate([0,0,total_water_block_height]) cylinder(d=bolt_dia_clearance, h=-total_water_block_height);
     }
     if (type=="main_assembly_bolt") color("gray",  preview ? 0.7 : 1) {
-        translate([0,0,total_water_block_height + heater_block_height/2]) {
-             cylinder(d=bolt_head_dia, h=3); // Nut
-             translate([0,0,-3]) cylinder(d=m3_clearance_dia, h=-(total_water_block_height+heater_block_height+bracket_thickness)); // Bolt shaft
+        // Model a bolt inserted from the top of the water block, threading into the heater block.
+        bolt_length = total_water_block_height + heater_block_height/2;
+        translate([0,0,total_water_block_height/2]) {
+             // Bolt Head
+             rotate([180,0,0]) cylinder(d=bolt_head_dia, h=bolt_head_depth);
+             // Bolt Shaft
+             rotate([180,0,0]) cylinder(d=bolt_dia_clearance, h=bolt_length);
         }
     }
 }
