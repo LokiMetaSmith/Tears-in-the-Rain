@@ -39,7 +39,7 @@ module water_ports() {
     inlet_pos = [-block_width / 2 + wall_margin, -block_depth / 2 + wall_margin, 0];
     translate(inlet_pos) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
 
-    outlet_pos = [-block_width / 2 + wall_margin, block_depth / 2 + wall_margin, 0];
+    outlet_pos = [-block_width / 2 + wall_margin, block_depth / 2 - wall_margin, 0];
     translate(outlet_pos) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
 }
 
@@ -62,10 +62,12 @@ module water_block_top(preview=false) {
         cube([block_width, block_depth, water_block_top_height], center=true);
         
         translate([0,0,water_block_bottom_height]) water_channels();
-        grid_map("heatbreak_clearance");
-        grid_map("coupler_hole");
-        main_assembly_bolt_clearance();
-        translate([0,0,water_block_bottom_height + water_block_top_height/2]) water_ports();
+        union(){
+            translate([0,0, water_block_top_height]) grid_map("heatbreak_clearance");
+           //# translate([0,0, water_block_top_height/2]) grid_map("coupler_hole");
+            main_assembly_bolt_clearance();
+            translate([0,0,water_block_bottom_height + water_block_top_height/2]) water_ports();
+        }
     }
 }
 
@@ -77,7 +79,9 @@ module water_block_bottom(preview=false) {
         cube([block_width, block_depth, water_block_bottom_height], center=true);
         
         translate([0,0,water_block_bottom_height]) water_channels();
-        grid_map("heatbreak_clearance");
-        main_assembly_bolt_clearance();
+        union(){
+            grid_map("heatbreak_clearance");
+            main_assembly_bolt_clearance();
+        }
     }
 }
