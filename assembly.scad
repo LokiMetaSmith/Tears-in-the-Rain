@@ -123,13 +123,13 @@ module assembly_view(exploded=false) {
 
     // --- Mounting Brackets (Conditional) ---
     if (mount_style == "side_brackets") {
-        // Place left bracket
-        translate([0, -block_depth/2 - bracket_thickness, -heater_block_height/2]) {
-            c_bracket(preview=true);
-        }
-        // Place right bracket
-        translate([0, block_depth/2, -heater_block_height/2]) {
+        // Place left bracket (-Y side), mirrored to face outward
+        translate([0, -block_depth/2, -heater_block_height/2]) {
             mirror([0,1,0]) c_bracket(preview=true);
+        }
+        // Place right bracket (+Y side), facing outward by default
+        translate([0, block_depth/2, -heater_block_height/2]) {
+            c_bracket(preview=true);
         }
     }
 
