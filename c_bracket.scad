@@ -1,7 +1,7 @@
 // c_bracket.scad - Defines a bracket for mounting to pillow block linear rails.
-// This file is intended to be included by assembly.scad.
+include <manufacturing_helpers.scad>;
 
-// Creates the 4-hole pattern for a standard pillow block (e.g., SBR12UU)
+// --- Original Hole Modules (for 3D rendering) ---
 module pillow_block_mount_holes() {
     for (y_pos = [-pillow_block_hole_spacing_y/2, pillow_block_hole_spacing_y/2]) {
         for (x_pos = [-pillow_block_hole_spacing_x/2, pillow_block_hole_spacing_x/2]) {
@@ -11,8 +11,6 @@ module pillow_block_mount_holes() {
         }
     }
 }
-
-// Creates clearance holes on the vertical plate to mount to the heater block
 module heater_mount_holes() {
     hole_positions_x = [-block_width/4, 0, block_width/4];
     for(x_pos = hole_positions_x) {
@@ -22,32 +20,50 @@ module heater_mount_holes() {
     }
 }
 
-// Main module to generate the bracket part.
+// --- Main Module ---
 module c_bracket(preview=false) {
-    difference() {
-        // Create the bracket shape
-        color("darkslategray", preview ? 0.7 : 1)
-        union() {
-            // Vertical Plate (attaches to heater block)
-            translate([0, 0, bracket_height/2])
-            cube([block_width, bracket_thickness, bracket_height], center=true);
+    if(generate_data) {
+        part_name = "C-Bracket";
 
-            // Top Flange (attaches to pillow block)
-            translate([0, bracket_flange_width/2, bracket_height - bracket_thickness/2])
-            cube([block_width, bracket_flange_width, bracket_thickness], center=true);
+        // Pillow Block Mount Holes
+        pillow_block_centers = [
+            for(x_sign = [-1, 1])
+                [x_sign * carriage_separation / 2, bracket_flange_width, bracket_height]
+        ];
+        for(center = pillow_block_centers) {
+            for (y_pos = [-pillow_block_hole_spacing_y/2, pillow_block_hole_spacing_y/2]) {
+                for (x_pos = [-pillow_block_hole_spacing_x/2, pillow_block_hole_spacing_x/2]) {
+                    pos = center + [x_pos, y_pos, 0];
+                    echo_hole(part_name, "Pillow Block Mount", pos, pillow_block_bolt_dia);
+                }
+            }
         }
 
-        // --- Subtract Holes ---
+        // Heater Block Mount Holes
+        heater_hole_positions = [ for(x_pos = [-block_width/4, 0, block_width/4]) [x_pos, 0, 0] ];
+        for(pos = heater_hole_positions) {
+            echo_hole(part_name, "Heater Block Mount", pos, bolt_dia_clearance);
+        }
 
-        // Holes on Top Flange for Pillow Blocks
-        translate([ -carriage_separation / 2, bracket_flange_width, bracket_height])
-        pillow_block_mount_holes();
+    } else {
+        difference() {
+            color("darkslategray", preview ? 0.7 : 1)
+            union() {
+                translate([0, 0, bracket_height/2])
+                cube([block_width, bracket_thickness, bracket_height], center=true);
 
-        translate([ carriage_separation / 2, bracket_flange_width, bracket_height])
-        pillow_block_mount_holes();
+                translate([0, bracket_flange_width/2, bracket_height - bracket_thickness/2])
+                cube([block_width, bracket_flange_width, bracket_thickness], center=true);
+            }
 
-        // Holes on Vertical Plate for mounting to heater block
-        translate([0, 0, 0])
-        heater_mount_holes();
+            translate([ -carriage_separation / 2, bracket_flange_width, bracket_height])
+            pillow_block_mount_holes();
+
+            translate([ carriage_separation / 2, bracket_flange_width, bracket_height])
+            pillow_block_mount_holes();
+
+            translate([0, 0, 0])
+            heater_mount_holes();
+        }
     }
 }

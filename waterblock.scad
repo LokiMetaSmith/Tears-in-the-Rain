@@ -1,7 +1,23 @@
-// waterblock.scad - Defines the two-piece water block with top-facing ports.
-// This file is intended to be included by assembly.scad and will not render correctly on its own.
+// waterblock.scad - Defines the two-piece water block.
 include <helpers.scad>;
-// Defines the serpentine water channel path as a solid for subtraction
+include <manufacturing_helpers.scad>;
+
+// --- Dynamic Water Port Placement Logic ---
+function get_available_port_corners() = [
+    let (
+        nozzle_pos = get_nozzle_positions(),
+        corners = [
+            [-block_width/2 + wall_margin, -block_depth/2 + wall_margin, 0],
+            [-block_width/2 + wall_margin,  block_depth/2 - wall_margin, 0],
+            [ block_width/2 - wall_margin, -block_depth/2 + wall_margin, 0],
+            [ block_width/2 - wall_margin,  block_depth/2 - wall_margin, 0]
+        ],
+        is_occupied = [for (c = corners) len([for (n = nozzle_pos) if (norm(c-n) < port_clearance) 1]) > 0]
+    )
+    [for (i = [0:len(corners)-1]) if (!is_occupied[i]) corners[i]]
+];
+
+// --- Original Hole Modules (for 3D rendering) ---
 module water_channels(epsilon=0.1) {
     channel_y_offset = -(grid_y - 1) * stagger_y_spacing / 2;
     channel_x_start = -block_width / 2 + wall_margin / 2;
@@ -33,121 +49,84 @@ module water_channels(epsilon=0.1) {
         }
     }
 }
-
-// --- Dynamic Water Port Placement ---
-
-// Function to get a list of all nozzle center coordinates.
-// This logic is duplicated from helpers.scad to avoid cross-file dependencies on functions.
-function get_nozzle_positions() = [
-    for (y = [0 : grid_y - 1])
-        for (x = [0 : grid_x - 1])
-            let (
-                offset_x = -(grid_x - 1) * nozzle_spacing / 2,
-                offset_y = -((grid_y - 1) * stagger_y_spacing) / 2,
-                center_adj = (grid_x % 2 == 0) ? -nozzle_spacing/4 : 0,
-                stagger = (y % 2 == 1) ? nozzle_spacing / 2 : 0
-            )
-            [offset_x + x * nozzle_spacing + stagger + center_adj, offset_y + y * stagger_y_spacing, 0]
-];
-
-// Function to find available corners for water ports.
-// It checks the four main corners of the block against the nozzle positions.
-function get_available_port_corners() = [
-    let (
-        nozzle_pos = get_nozzle_positions(),
-        // Define the four corners with a margin
-        corners = [
-            [-block_width/2 + wall_margin, -block_depth/2 + wall_margin, 0], // Bottom-Left
-            [-block_width/2 + wall_margin,  block_depth/2 - wall_margin, 0], // Top-Left
-            [ block_width/2 - wall_margin, -block_depth/2 + wall_margin, 0], // Bottom-Right
-            [ block_width/2 - wall_margin,  block_depth/2 - wall_margin, 0]  // Top-Right
-        ],
-        // Check if a nozzle is too close to a given corner
-        is_occupied = [for (c = corners) len([for (n = nozzle_pos) if (norm(c-n) < port_clearance) 1]) > 0]
-    )
-    // Return a list of corners that are not occupied
-    [for (i = [0:len(corners)-1]) if (!is_occupied[i]) corners[i]]
-];
-
-// Defines the G1/4" threaded inlet/outlet ports on the top face
 module water_ports() {
     available_corners = get_available_port_corners();
-
-    if (len(available_corners) < 2) {
-        // Error state: Not enough free corners for ports. Render a visible warning cube.
+    if (len(available_corners) >= 2) {
+        translate(available_corners[0]) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
+        translate(available_corners[1]) cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
+    } else {
         color("red") translate([0,0,water_block_top_height]) cube(10, center=true);
         echo("ERROR: Could not find two free corners for water ports!");
-    } else {
-        // Place inlet at the first available corner
-        translate(available_corners[0])
-            cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
-
-        // Place outlet at the second available corner
-        translate(available_corners[1])
-            cylinder(h = water_block_top_height + 0.2, d = port_tap_dia, center=true);
     }
 }
-
-// Creates simple clearance holes for the main assembly bolts to pass through the bottom plate
 module main_assembly_bolt_clearance() {
     for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
-        translate([x_pos, -block_depth/2 + bracket_flange_width/2, 0])
-        cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
-        
-        translate([x_pos, block_depth/2 - bracket_flange_width/2, 0])
-        cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
+        translate([x_pos, -block_depth/2 + bracket_flange_width/2, 0]) cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
+        translate([x_pos, block_depth/2 - bracket_flange_width/2, 0]) cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
     }
 }
-
-// Creates counterbored clearance holes for the main assembly bolts in the top plate
 module main_assembly_bolt_counterbored_clearance() {
     for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) {
-        // Holes on the negative Y side
         translate([x_pos, -block_depth/2 + bracket_flange_width/2, 0]) {
-             cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true); // Clearance hole
-             translate([0,0,total_water_block_height/2]) rotate([180,0,0]) cylinder(d=bolt_head_dia, h=bolt_head_depth); // Counterbore
+             cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
+             translate([0,0,total_water_block_height/2]) rotate([180,0,0]) cylinder(d=bolt_head_dia, h=bolt_head_depth);
         }
-        // Holes on the positive Y side
         translate([x_pos, block_depth/2 - bracket_flange_width/2, 0]) {
-             cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true); // Clearance hole
-             translate([0,0,total_water_block_height/2]) rotate([180,0,0]) cylinder(d=bolt_head_dia, h=bolt_head_depth); // Counterbore
+             cylinder(d=bolt_dia_clearance, h=total_water_block_height+0.2, center=true);
+             translate([0,0,total_water_block_height/2]) rotate([180,0,0]) cylinder(d=bolt_head_dia, h=bolt_head_depth);
         }
     }
 }
 
-// Top Plate
+// --- Main Modules ---
 module water_block_top(preview=false) {
-    difference() {
-        color("darkcyan", preview ? 0.8 : 1)
-        translate([0,0,water_block_bottom_height + water_block_top_height/2])
-        cube([block_width, block_depth, water_block_top_height], center=true);
-        
-        translate([0,0,water_block_bottom_height]) water_channels();
-        union(){
-            // Holes that go through the entire water block assembly
-            grid_map("heatbreak_clearance");
-            main_assembly_bolt_counterbored_clearance(); // Use counterbored holes for the top plate
-
-            // Features specific to the top plate, positioned relative to its center
-            translate([0,0, water_block_bottom_height + water_block_top_height/2]) {
-                grid_map("coupler_hole"); // For bowden couplers
-                water_ports(); // For G1/4 fittings
+    if (generate_data) {
+        part_name = "Water Block Top";
+        nozzle_pos = get_nozzle_positions();
+        for(pos = nozzle_pos) echo_hole(part_name, "Heatbreak Clearance Thru-Hole", pos, heatbreak_clearance_dia);
+        for(pos = nozzle_pos) echo_hole(part_name, "Bowden Coupler", pos, coupler_tap_dia, "M6x1.0");
+        bolt_positions = [ for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) for (y_sign = [-1, 1]) [x_pos, y_sign * (block_depth/2 - bracket_flange_width/2), 0] ];
+        for(pos = bolt_positions) echo_hole(part_name, "Main Assembly Bolt (CBore)", pos, bolt_dia_clearance, "N/A", bolt_head_dia, bolt_head_depth);
+        available_corners = get_available_port_corners();
+        if (len(available_corners) >= 2) {
+            echo_hole(part_name, "Water Port", available_corners[0], port_tap_dia, "G1/4");
+            echo_hole(part_name, "Water Port", available_corners[1], port_tap_dia, "G1/4");
+        }
+    } else {
+        difference() {
+            color("darkcyan", preview ? 0.8 : 1)
+            translate([0,0,water_block_bottom_height + water_block_top_height/2])
+            cube([block_width, block_depth, water_block_top_height], center=true);
+            translate([0,0,water_block_bottom_height]) water_channels();
+            union(){
+                grid_map("heatbreak_clearance");
+                main_assembly_bolt_counterbored_clearance();
+                translate([0,0, water_block_bottom_height + water_block_top_height/2]) {
+                    grid_map("coupler_hole");
+                    water_ports();
+                }
             }
         }
     }
 }
 
-// Bottom Plate
 module water_block_bottom(preview=false) {
-     difference() {
-        color("teal", preview ? 0.8 : 1)
-        translate([0,0,water_block_bottom_height/2])
-        cube([block_width, block_depth, water_block_bottom_height], center=true);
-        
-        translate([0,0,water_block_bottom_height]) water_channels();
-        union(){
-            grid_map("heatbreak_clearance");
-            main_assembly_bolt_clearance();
+    if(generate_data) {
+        part_name = "Water Block Bottom";
+        nozzle_pos = get_nozzle_positions();
+        for(pos = nozzle_pos) echo_hole(part_name, "Heatbreak Clearance Thru-Hole", pos, heatbreak_clearance_dia);
+        bolt_positions = [ for (x_pos = [-bracket_width/2 + bolt_margin*2, 0, bracket_width/2 - bolt_margin*2]) for (y_sign = [-1, 1]) [x_pos, y_sign * (block_depth/2 - bracket_flange_width/2), 0] ];
+        for(pos = bolt_positions) echo_hole(part_name, "Main Assembly Bolt Clearance", pos, bolt_dia_clearance);
+    } else {
+        difference() {
+            color("teal", preview ? 0.8 : 1)
+            translate([0,0,water_block_bottom_height/2])
+            cube([block_width, block_depth, water_block_bottom_height], center=true);
+            translate([0,0,water_block_bottom_height]) water_channels();
+            union(){
+                grid_map("heatbreak_clearance");
+                main_assembly_bolt_clearance();
+            }
         }
     }
 }

@@ -18,6 +18,7 @@
 // =============================================================================
 
 // -- View Control --
+generate_data = false; // Set to true to generate manufacturing data instead of rendering
 view_mode = "full_assembly"; // ["full_assembly", "exploded_view", "heater_block_part", "water_block_top_part", "water_block_bottom_part", "c_bracket_part", "mounting_plate_part"]
 
 // -- Gantry & Mounting Configuration --
@@ -78,6 +79,7 @@ bracket_width = block_width; // Bracket length is the width of the main block
 // =============================================================================
 // File Includes
 // =============================================================================
+include <positions.scad>;
 include <helpers.scad>;
 include <heater.scad>;
 include <waterblock.scad>;
