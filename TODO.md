@@ -1,5 +1,5 @@
-# Project TODOs
+# TODO List
 
-- [ ] Generate final STEP or DXF files for manufacturing
+- [ ] Generating final STEP or DXF files for manufacturing
 - [x] Update the bill of materials (BOM)
-- [ ] Design the external Bowden extruder array
+- [ ] Designing the external Bowden extruder array

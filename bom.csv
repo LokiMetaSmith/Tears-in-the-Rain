@@ -2,17 +2,16 @@ Category,Part Ref,Description,Material/Specification,Quantity Formula,Quantity (
 Custom Machined,PH-001,Heater Block,6061-T6 Aluminum,"1",1,"SendCutSend","Export heater_block_part from assembly.scad"
 Custom Machined,PH-002,Top Water Block / Coupler Plate,5052 Aluminum,"1",1,"SendCutSend","Export water_block_top_part from assembly.scad"
 Custom Machined,PH-003,Bottom Water Block Plate,5052 Aluminum,"1",1,"SendCutSend","Export water_block_bottom_part from assembly.scad"
-Custom Machined,PH-004,Water Block Gasket,High-Temp Silicone Sheet,"1",1,"Custom Cut","Custom cut to match water block perimeter"
-Custom Machined,PH-005,Gantry Mounting Plate,6061-T6 Aluminum,"1",1,"SendCutSend","Export mounting_plate_part. For Top Plate mount style."
-Custom Machined,PH-006,Mounting Bracket (Optional),5052 Aluminum,"2",2,"SendCutSend","Export mounting_bracket_part. For Side Brackets mount style."
+Custom Machined,PH-004,Water Block Gasket,High-Temp Silicone Sheet,"1",1,"Custom Cut","Custom cut to match the perimeter of the water block."
+Custom Machined,PH-005,Mounting Plate,6061-T6 Aluminum,"1",1,"SendCutSend","Export mounting_plate_part from assembly.scad. For mount_style='top_plate'"
 Standard Hardware,PH-101,M6 Nozzle,"E3D V6 Nozzle, Brass, 1.75mm","grid_x * grid_y",48,"E3D, MatterHackers",
 Standard Hardware,PH-102,M6 Heat Break,"E3D V6 Style, All-Metal","grid_x * grid_y",48,"E3D, Amazon",
 Standard Hardware,PH-103,Heater Cartridge,"24V, 40W, 6mm Diameter","grid_x * grid_y",48,"Amazon, AliExpress","Corrected from previous BOM based on SCAD logic."
 Standard Hardware,PH-104,Thermistor,"Cartridge Style, PT100/PT1000","1",1,"E3D, Gulfcoast Robotics",
 Standard Hardware,PH-105,PC4-M6 Bowden Coupler,"PC4-M6 Pneumatic Fitting","grid_x * grid_y",48,"Amazon, McMaster-Carr",
-Standard Hardware,PH-106,G1/4 Water Fitting,"G1/4"" Barb Fitting","2",2,"McMaster-Carr, EKWB",
-Fasteners,PH-201,Water Block Perimeter Bolt,M3x20mm Socket Head Cap Screw,"(2*ceil((block_width-2*bolt_margin)/(bolt_margin*2)))+(2*ceil((block_depth-2*bolt_margin)/(bolt_margin*2)))",20,"McMaster-Carr","Clamps water block halves. Not fully modeled in SCAD."
-Fasteners,PH-202,Gantry Mounting Screw,M3x8mm Low Profile Socket Head,"4",4,"McMaster-Carr","Attaches Mounting Plate to MGN12 carriages."
+Standard Hardware,PH-106,G1/4 Water Fitting,"G1/4"" Barb Fitting for Tubing","2",2,"McMaster-Carr, EKWB",
+Fasteners,PH-201,Water Block Assembly Bolt,M3x25mm Socket Head Cap Screw,"(2*ceil((block_width-2*bolt_margin)/(bolt_margin*2)))+(2*ceil((block_depth-2*bolt_margin)/(bolt_margin*2)))",20,"McMaster-Carr",
+Fasteners,PH-202,Gantry Mounting Screw,M3x8mm Low Profile Socket Head,"4 * 4",16,"McMaster-Carr","Attaches heater block wings to 4 MGN12 carriages (if side brackets) or Mounting Plate to carriages"
 Fasteners,PH-203,Thermistor Grub Screw,M3x3mm Set Screw,"1",1,"McMaster-Carr",
 Fasteners,PH-204,Main Assembly Bolt,M3x40mm Socket Head Cap Screw,"6",6,"McMaster-Carr","Clamps Mounting Plate, Water Block, and Heater Block together."
 Fasteners,PH-205,M3 Nut,M3 Hex Nut,"6",6,"McMaster-Carr","For Main Assembly Bolts."
