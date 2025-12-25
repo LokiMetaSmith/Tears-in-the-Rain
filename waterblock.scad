@@ -1,6 +1,9 @@
 // waterblock.scad - Defines the two-piece water block with top-facing ports.
 // This file is intended to be included by assembly.scad and will not render correctly on its own.
+include <config.scad>;
 include <helpers.scad>;
+include <hardware.scad>;
+
 // Defines the serpentine water channel path as a solid for subtraction
 module water_channels(epsilon=0.1) {
     channel_y_offset = -(grid_y - 1) * stagger_y_spacing / 2;
@@ -12,23 +15,18 @@ module water_channels(epsilon=0.1) {
         start_point = (y % 2 == 0) ? [channel_x_start, y_pos, 0] : [channel_x_end, y_pos, 0];
         end_point = (y % 2 == 0) ? [channel_x_end, y_pos, 0] : [channel_x_start, y_pos, 0];
         
-        minkowski() {
-            hull() {
-                translate(start_point) cylinder(h = epsilon, d = 0.01, center = true);
-                translate(end_point) cylinder(h = epsilon, d = 0.01, center = true);
-            }
-            sphere(d = water_channel_dia);
+        hull() {
+            translate(start_point) sphere(d = water_channel_dia);
+            translate(end_point) sphere(d = water_channel_dia);
         }
 
         if (y < grid_y - 1) {
             next_y_pos = channel_y_offset + (y + 1) * stagger_y_spacing;
             connector_x = (y % 2 == 0) ? channel_x_end : channel_x_start;
-            minkowski() {
-                hull() {
-                    translate([connector_x, y_pos, 0]) cylinder(h = epsilon, d = 0.01, center = true);
-                    translate([connector_x, next_y_pos, 0]) cylinder(h = epsilon, d = 0.01, center = true);
-                }
-                sphere(d = water_channel_dia);
+
+            hull() {
+                translate([connector_x, y_pos, 0]) sphere(d = water_channel_dia);
+                translate([connector_x, next_y_pos, 0]) sphere(d = water_channel_dia);
             }
         }
     }
@@ -67,6 +65,9 @@ module water_block_top(preview=false) {
            //# translate([0,0, water_block_top_height/2]) grid_map("coupler_hole");
             main_assembly_bolt_clearance();
             translate([0,0,water_block_bottom_height + water_block_top_height/2]) water_ports();
+
+            // Assembly bolts for water block
+            translate([0,0,water_block_bottom_height + water_block_top_height/2]) grid_map("assembly_bolt_top");
         }
     }
 }
@@ -82,6 +83,9 @@ module water_block_bottom(preview=false) {
         union(){
             grid_map("heatbreak_clearance");
             main_assembly_bolt_clearance();
+
+            // Assembly bolts for water block
+            translate([0,0,water_block_bottom_height/2]) grid_map("assembly_bolt_bottom");
         }
     }
 }
