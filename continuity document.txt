@@ -55,4 +55,4 @@ Respect the Modular Structure: When making changes, modify the appropriate compo
 
 Check for Warnings: Always check the OpenSCAD console for warnings after making a change. The most common errors in this project have been "unknown module" (due to incorrect definition order) and "unknown variable" (due to scope issues between files).
 
-The immediate next steps for this project would likely involve generating final STEP or DXF files for manufacturing, update the bill of materials (BOM), or designing the external Bowden extruder array.
+The immediate next steps for this project would likely involve generating final STEP or DXF files for manufacturing, or designing the external Bowden extruder array. (BOM update completed).
