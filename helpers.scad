@@ -15,7 +15,7 @@ module hardware(type,preview=false) {
     if (type=="heater") color("red", preview ? 0.7 : 1) cylinder(d=heater_cartridge_dia, h=heater_block_height, center=false);
     if (type=="thermistor") color("green", preview ? 0.7 : 1) rotate([0,90,0]) cylinder(d=thermistor_cartridge_dia, h=block_width, center=true);
     if (type=="heatbreak") color("Cyan", preview ? 0.7 : 1) { cylinder(d=7, h=total_water_block_height); translate([0,0,-heatbreak_thread_depth]) cylinder(d=6, h=heatbreak_thread_depth); }
-    if (type=="coupler") color("gold", preview ? 0.7 : 1) { cylinder(d=coupler_tap_dia, h=4); translate([0,0,4]) cylinder(d=8, h=5, =6); translate([0,0,9]) color("white", preview ? 0.7 : 1) cylinder(d=10, h=4); }
+    if (type=="coupler") color("gold", preview ? 0.7 : 1) { cylinder(d=coupler_tap_dia, h=4); translate([0,0,4]) cylinder(d=8, h=5, $fn=6); translate([0,0,9]) color("white", preview ? 0.7 : 1) cylinder(d=10, h=4); }
     if (type=="assembly_bolt") color("gray",  preview ? 0.7 : 1) {
         translate([0,0,total_water_block_height]) cylinder(d=bolt_head_dia, h=bolt_head_depth);
         translate([0,0,total_water_block_height]) cylinder(d=bolt_dia_clearance, h=-total_water_block_height);
@@ -140,12 +140,10 @@ module grid_map(type,preview=false) {
         }
     }
     else if (type=="heater_hole") {
-         for (y = [0 : grid_y - 1]) for (x = [0 : grid_x - 1]) {
-            if (x < grid_x - 1) {
-                 effective_stagger = (y % 2 == 0) ? nozzle_spacing/2 : 0;
-                 pos = [offset_x + x * nozzle_spacing + effective_stagger + center_adj, offset_y + y * stagger_y_spacing, 0];
-                 translate(pos) heater_hole();
-            }
+        for (y = [0 : grid_y - 1]) for (x = [0 : grid_x - 1]) {
+            stagger = (y % 2 == 1) ? nozzle_spacing / 2 : 0;
+            pos = [nozzle_spacing/2 + offset_x + x * nozzle_spacing - stagger + center_adj, offset_y + y * stagger_y_spacing, 0];
+            translate(pos) heater_hole();
         }
     }
     else if (type=="assembly_bolt_top" || type=="assembly_bolt_bottom") {

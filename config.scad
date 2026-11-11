@@ -77,4 +77,4 @@ block_depth = (grid_y - 1) * stagger_y_spacing + wall_margin * 2;
 explode_gap = 10;
 bracket_width = block_width; // Bracket length is the width of the main block
 
-=64;
+$fn = 64;
